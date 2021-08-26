@@ -18,14 +18,14 @@ df = pd.DataFrame(columns=columns_names)
 chrome_options = Options()
 chrome_options.add_argument("--start-maximized")
 driver = webdriver.Chrome(executable_path='chromedriver91.0.4472.101_win32.exe', options=chrome_options)
-driver.get("https://usa.ingrammicro.com/Site/Search#category%3aDisplays")
+driver.get("https://usa.ingrammicro.com/Site/Search#category%3aHealth%20%26%20Wellness")
 current_window = driver.current_window_handle
 
 time.sleep(5)
 driver.find_element_by_id('product-activate').click()
 driver.find_element_by_xpath("//a[@class='cc_btn cc_btn_accept_all']").click()
 
-categories_index = 6
+categories_index = 7
 categories_url = []
 categories_name = []
 categories_li = WebDriverWait(driver, 25).until(EC.presence_of_all_elements_located((By.XPATH, "//div[@id='product-list']/ul/li")))
@@ -35,16 +35,15 @@ for index in range(len(categories_li)):
         categories_url.append(element.get_attribute('href'))
         categories_name.append(element.text)
 
-try:
-    body_elements = WebDriverWait(driver, 25).until(EC.presence_of_all_elements_located((By.XPATH, "//div[@class='grid-column js-favorite-lines-container  show']/div")))
-except:
-    print('No product')
-    pass
-
 count = 0
 index = 0
-number_of_products = len(body_elements)
 while True:
+    try:
+        body_elements = WebDriverWait(driver, 25).until(EC.presence_of_all_elements_located((By.XPATH, "//div[@class='grid-column js-favorite-lines-container  show']/div")))
+    except:
+        print('No product')
+        pass
+    number_of_products = len(body_elements)
     if body_elements[index].get_attribute('data-rank'):
         current_window = driver.current_window_handle
         try:
@@ -84,6 +83,10 @@ while True:
                         if td.text == 'Product Name':
                             productname = tds[1].text
                             break
+            if productname == '':
+                product_description = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, '//div[@class="font-20 bold margin-top-lg  clsProductFullDesc"]'))).text
+                product_description.strip()
+                productname = product_description[(product_description.find(brand)+len(brand)+1):product_description.find(' -')]
             df.at[count - 1, 'Product Name'] = productname
             print('Product Name: ' + productname)
         except:
@@ -122,7 +125,7 @@ while True:
         try:
             price = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, '//div[@id="priceSection"]/div[1]/div[1]/span[1]'))).text
             before_price = float(price[7:-9].replace(',', ''))
-            product_price = before_price - round(random.uniform(0, before_price / 20), 2)
+            product_price = round(before_price - round(random.uniform(0, before_price / 20), 2))
             df.at[count - 1, 'Price'] = product_price
             print('Price: ' + str(product_price))
         except Exception as e:
@@ -202,7 +205,11 @@ while True:
             print('No related products')
             pass
         
-        driver.close()
+        for window in driver.window_handles:
+            if current_window != window:
+                driver.switch_to.window(window)
+                driver.close()
+        
         driver.switch_to.window(current_window)
         df.to_csv(categories_name[categories_index]+'.csv', index = False)
         
@@ -221,7 +228,5 @@ while True:
                 break
         except: pass
         time.sleep(10)
-        body_elements = driver.find_elements_by_xpath("//div[@class='grid-column js-favorite-lines-container  show']/div")
-        number_of_products = len(body_elements)
 
 driver.close()
