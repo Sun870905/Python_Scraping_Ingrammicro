@@ -18,14 +18,14 @@ df = pd.DataFrame(columns=columns_names)
 chrome_options = Options()
 chrome_options.add_argument("--start-maximized")
 driver = webdriver.Chrome(executable_path='chromedriver91.0.4472.101_win32.exe', options=chrome_options)
-driver.get("https://usa.ingrammicro.com/Site/Search#category%3aComputer%20Systems")
+driver.get("https://usa.ingrammicro.com/Site/Search#category%3aHealth%20%26%20Wellness")
 current_window = driver.current_window_handle
 
 time.sleep(5)
 driver.find_element_by_id('product-activate').click()
 driver.find_element_by_xpath("//a[@class='cc_btn cc_btn_accept_all']").click()
 
-categories_index = 4
+categories_index = 7
 categories_url = []
 categories_name = []
 categories_li = WebDriverWait(driver, 25).until(EC.presence_of_all_elements_located((By.XPATH, "//div[@id='product-list']/ul/li")))
@@ -133,7 +133,8 @@ while True:
         
         try:
             price = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, '//div[@id="priceSection"]/div[1]/div[1]/span[1]'))).text
-            product_price = float(price[7:-9].replace(',', ''))
+            before_price = float(price[7:-9].replace(',', ''))
+            product_price = round(before_price - round(random.uniform(0, before_price / 20), 2))
             df.at[count - 1, 'Price'] = product_price
             print('Price: ' + str(product_price))
         except Exception as e:
